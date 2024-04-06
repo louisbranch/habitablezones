@@ -3,10 +3,9 @@ from manim import *
 
 Start = Dict[str, object]
 stars: List[Start] = [
-    {"radius": 1, "scale": 1, "color": YELLOW, "inner": (0.8, 0.8), "outer": (1.2, 1.2)},
-    {"radius": 0.5, "scale": 0.5, "color": PURE_RED, "inner": (0.6, 0.6), "outer": (0.8, 0.8)},
-    {"radius": 1.5, "scale": 3, "color": PURE_BLUE, "inner": (1.2, 1.2), "outer": (1.4, 1.4)},
-    {"radius": 1, "scale": 2/3, "color": YELLOW, "inner": (0.8, 0.8), "outer": (1.2, 1.2)},
+    {"radius": 0.5, "scale": 0.5, "color": PURE_RED, "planet": BLUE_A, "inner": (0.6, 0.6), "outer": (0.8, 0.8)},
+    {"radius": 1.5, "scale": 3, "color": PURE_BLUE, "planet": RED, "inner": (1.2, 1.2), "outer": (1.4, 1.4)},
+    {"radius": 1, "scale": 2/3, "color": YELLOW, "planet": BLUE, "inner": (0.8, 0.8), "outer": (1.2, 1.2)},
 ]
 
 def boundaries(scene, name, orbit, sizes, t=2):
@@ -28,7 +27,7 @@ def boundaries(scene, name, orbit, sizes, t=2):
 
         return update
 
-    a, b = orbit * sizes[0]
+    a, b = orbit * sizes[2]
     path = ParametricFunction(
         lambda t: a * np.cos(t) * RIGHT + b * np.sin(t) * UP,
         t_range=np.array([0, TAU]),
@@ -41,19 +40,19 @@ def boundaries(scene, name, orbit, sizes, t=2):
     scene.add(label)
 
     def update_label(obj):
-        obj.next_to(ellipse, DOWN)
+        obj.next_to(ellipse, DOWN, buff=0.1)
 
     return (
+        [
+            UpdateFromAlphaFunc(ellipse, update_ellipse(sizes[2], sizes[0])),
+            UpdateFromFunc(label, update_label),
+        ],
         [
             UpdateFromAlphaFunc(ellipse, update_ellipse(sizes[0], sizes[1])),
             UpdateFromFunc(label, update_label),
         ],
         [
             UpdateFromAlphaFunc(ellipse, update_ellipse(sizes[1], sizes[2])),
-            UpdateFromFunc(label, update_label),
-        ],
-        [
-            UpdateFromAlphaFunc(ellipse, update_ellipse(sizes[2], sizes[3])),
             UpdateFromFunc(label, update_label),
         ],
     )

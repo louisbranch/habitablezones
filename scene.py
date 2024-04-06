@@ -76,15 +76,9 @@ class PlanetarySystemScene(Scene):
         outer = orbits.boundaries(self, "Outer HZ", ellipse, outer_values)
 
         for i, values in enumerate(orbits.stars):
-            if i == 0:
-                continue # skip original star
-            
-            scale = star.animate.scale(values["scale"])
-            color = star.animate.set_color(values["color"])
-            #atm  = planet.animate.set_color
-            
-            self.play(scale, color, *inner[i-1], *outer[i-1], run_time=2)
-
+            s = star.animate.scale(values["scale"]).set_color(values["color"])
+            p  = planet.animate.set_color(values["planet"])
+            self.play(s, p, *inner[i], *outer[i], run_time=2)
 
 class EquationScene(Scene):
     def highlight_equation(self, title, formula, highlights, highlight_color=YELLOW, wait_time=2):
