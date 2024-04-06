@@ -1,5 +1,5 @@
 from manim import *
-import orbits
+import orbits, luminosity
 
 class IntroScene(Scene):
     def construct(self):
@@ -103,6 +103,37 @@ class StellarLuminosityScene(EquationScene):
         formula = r"L = 4\pi R^2 \sigma T_{\text{eff}}^4"
         highlights = ["L", "R", "\sigma", "T"]
         self.highlight_equation(title, formula, highlights)
+
+        # Luminosity as a function of R for a constant T_eff
+        axes = Axes(
+            x_range=[0.1, 10, 100], 
+            y_range=[0, 100, 10],
+            x_length=6,
+            y_length=4,
+            tips=False,
+            axis_config={"color": BLUE},
+            x_axis_config={
+                "include_numbers": True,
+                "include_ticks": True,
+                "include_tip": True,
+                "decimal_number_config": {"num_decimal_places": 1},
+            },
+            y_axis_config={"include_numbers": True, "include_tip": True},
+        )
+
+        graph = axes.plot(
+            luminosity.luminosity_vs_radius,
+            color=YELLOW,
+        )
+
+        # Graph labels
+        label = axes.get_graph_label(graph, label=MathTex(r"\frac{L}{L_{\odot}}"))
+        x_label = MathTex("R").next_to(axes.x_axis.get_end(), DR)
+        y_label = MathTex(r"\log10\left(\frac{L}{L_{\odot}}\right)").next_to(axes.y_axis.get_end(), UL)
+
+        # Adding to scene
+        self.play(Create(axes), Write(x_label), Write(y_label), Create(graph), Write(label))
+        self.wait(1)
 
 class HZBoundariesScene(EquationScene):
     def construct(self):
