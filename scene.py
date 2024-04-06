@@ -43,14 +43,12 @@ class IntroScene(Scene):
 class PlanetarySystemScene(Scene):
     def construct(self):
 
-        star_radius = 1
-        star = Circle(radius=star_radius, color=YELLOW, fill_opacity=1).move_to(ORIGIN)
-        self.add(star)
-        
         # Parameters for the orbits
-        a = 4.5
-        b = 3
-        r = 0.15
+        r = 1
+        a, b = 4.5, 3
+
+        star = Circle(radius=r, color=YELLOW, fill_opacity=1).move_to(ORIGIN)
+        self.add(star)
 
         # Elliptical orbit
         orbit_path = ParametricFunction(
@@ -61,7 +59,7 @@ class PlanetarySystemScene(Scene):
         self.add(orbit_path)
 
         # Planet
-        planet = Circle(r, color=BLUE, fill_opacity=1)
+        planet = Circle(0.15, color=BLUE, fill_opacity=1)
         planet.move_to(orbit_path.get_start())
         self.add(planet)
 
@@ -70,16 +68,22 @@ class PlanetarySystemScene(Scene):
         animation = MoveAlongPath(planet, orbit_path, rate_func=linear, run_time=orbit_period)
         self.play(animation, rate_func=linear)
 
-        for values in orbits.stars:
-            scale = values["scale"]
-            color = values["color"]
-            a_inner, b_inner = values['inner']
+        inner_values = [np.array(orbit["inner"]) for orbit in orbits.stars]
+        outer_values = [np.array(orbit["outer"]) for orbit in orbits.stars]
 
-            inner = orbits.boundaries(self, "Inner HZ", (a*0.8, b*0.8),(a*1.1, b*1.1) )
-            outer = orbits.boundaries(self, "Outer HZ", (a*1.2, b*1.2),(a*0.9, b*1.9) )
+        ellipse = np.array([a, b])
+        inner = orbits.boundaries(self, "Inner HZ", ellipse, inner_values)
+        outer = orbits.boundaries(self, "Outer HZ", ellipse, outer_values)
+
+        for i, values in enumerate(orbits.stars):
+            if i == 0:
+                continue # skip original star
             
-            scale = star.animate.scale(scale)
-            color = star.animate.set_color(color)
+            scale = star.animate.scale(values["scale"])
+            color = star.animate.set_color(values["color"])
+            #atm  = planet.animate.set_color
+            
+            self.play(scale, color, *inner[i-1], *outer[i-1], run_time=2)
 
 
 class EquationScene(Scene):
