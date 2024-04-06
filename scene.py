@@ -1,4 +1,5 @@
 from manim import *
+import orbits
 
 class IntroScene(Scene):
     def construct(self):
@@ -18,8 +19,7 @@ class IntroScene(Scene):
         citation.to_edge(DOWN + RIGHT, buff=0.5)
         self.add(citation)
         
-        # Wait for 3 seconds
-        self.wait(3)
+        self.wait(10)
         
         # Prepare the 'o' in "Zones" for independent animation
         # Creating a separate Text object for the 'o' so it can be animated independently
@@ -34,50 +34,88 @@ class IntroScene(Scene):
         self.play(
             o_text.animate.move_to(ORIGIN),
             FadeOut(title, citation),
-            run_time=2  # Adjust the run_time as needed
+            run_time=2 
         )
 
-        star = Circle(radius=0.75, color=YELLOW, fill_opacity=1).move_to(ORIGIN)
+        star = Circle(radius=1, color=YELLOW, fill_opacity=1).move_to(ORIGIN)
         self.play(Transform(o_text, star))
+
+class PlanetarySystemScene(Scene):
+    def construct(self):
+
+        star_radius = 1
+        star = Circle(radius=star_radius, color=YELLOW, fill_opacity=1).move_to(ORIGIN)
+        self.add(star)
         
         # Parameters for the orbits
-        orbits = [
-            #{"r": 0.1, "a": 3, "b": 2, "resonance": 1},
-            {"r": 0.15, "a": 4.5, "b": 3, "resonance": 2},
-            #{"r": 0.3, "a": 6, "b": 4, "resonance": 4},
-        ]
+        a = 4.5
+        b = 3
+        r = 0.15
 
-        planet_paths = []  # To store ParametricFunction objects for each orbit
-        planets = []
-        for orbit in orbits:
-            # Elliptical orbit
-            orbit_path = ParametricFunction(
-                lambda t: orbit["a"] * np.cos(t) * RIGHT + orbit["b"] * np.sin(t) * UP,
-                t_range=np.array([0, TAU]),
-                color=WHITE
-            ).set_stroke(opacity=0.1)
-            self.add(orbit_path)
-            planet_paths.append(orbit_path)  # Add the path object to the list
+        # Elliptical orbit
+        orbit_path = ParametricFunction(
+            lambda t: a * np.cos(t) * RIGHT + b * np.sin(t) * UP,
+            t_range=np.array([0, TAU]),
+            color=WHITE
+        ).set_stroke(opacity=0.1)
+        self.add(orbit_path)
 
-            # Planet
-            planet = Circle(radius=orbit["r"], color=BLUE, fill_opacity=1)
-            planet.move_to(orbit_path.get_start())
-            planets.append(planet)
+        # Planet
+        planet = Circle(r, color=BLUE, fill_opacity=1)
+        planet.move_to(orbit_path.get_start())
+        self.add(planet)
 
-            # Add planet to scene
-            self.add(planet)
+        # Correctly calculate a simplified orbit period based on the semi-major axis 'a'
+        orbit_period = a ** 1.5
+        animation = MoveAlongPath(planet, orbit_path, rate_func=linear, run_time=orbit_period)
+        self.play(animation, rate_func=linear)
 
-        animations = []
-        for planet, orbit, orbit_path in zip(planets, orbits, planet_paths):
-            # Correctly calculate a simplified orbit period based on the semi-major axis 'a'
-            orbit_period = orbit["a"] ** 1.5  # Simplified, assuming units and constants are such that this calculation makes sense for visualization
+        for values in orbits.stars:
+            scale = values["scale"]
+            color = values["color"]
+            a_inner, b_inner = values['inner']
+
+            inner = orbits.boundaries(self, "Inner HZ", (a*0.8, b*0.8),(a*1.1, b*1.1) )
+            outer = orbits.boundaries(self, "Outer HZ", (a*1.2, b*1.2),(a*0.9, b*1.9) )
             
-            # Create an animation for the planet to move along its path
-            animation = MoveAlongPath(planet, orbit_path, rate_func=linear, run_time=orbit_period)
-            animations.append(animation)
+            scale = star.animate.scale(scale)
+            color = star.animate.set_color(color)
 
-        # Loop animations for a fixed duration or number of repeats
-        number_of_repeats = 1
-        for _ in range(number_of_repeats):  # Fixed number of repeats
-            for animation in animations:
-                self.play(animation, rate_func=linear)
+
+class EquationScene(Scene):
+    def highlight_equation(self, title, formula, highlights, highlight_color=YELLOW, wait_time=2):
+        # Title
+        title_text = Text(title, font_size=24)
+        title_text.to_edge(UP)
+        self.add(title_text)
+
+        # Equation
+        equation = MathTex(formula, substrings_to_isolate=highlights).scale(1.5)
+        equation.next_to(title_text, DOWN, buff=0.5)
+        self.add(equation)
+
+        # Highlight loop
+        for highlight in highlights:
+            self.play(Indicate(equation.get_part_by_tex(highlight), color=highlight_color), run_time=1)
+            self.wait(wait_time)
+
+class StellarLuminosityScene(EquationScene):
+    def construct(self):
+        title = "Stellar Luminosity"
+        formula = r"L = 4\pi R^2 \sigma T_{\text{eff}}^4"
+        highlights = ["L", "R", "\sigma", "T"]
+        self.highlight_equation(title, formula, highlights)
+
+class HZBoundariesScene(EquationScene):
+    def construct(self):
+        title = "Habitable Zone Boundaries"
+        formula = r"\text{HZ}_{\text{inner/outer}} = \frac{L}{S_{\text{inner/outer}}(T_{\text{eff}})}"
+        highlights = ["HZ", "L", "S", "T"]
+        self.highlight_equation(title, formula, highlights)
+
+class HZTransitionRateScene(EquationScene):
+    def construct(self):
+        title = "Habitable Zone Transition Rate"
+        formula = r"\mu_{\text{inner/outer}} = \frac{\text{HZ}_{\text{inner/outer}}^{\text{TMS}} - \text{HZ}_{\text{inner/outer}}^{\text{ZAMS}}}{\tau}"
+        highlights = ["\mu", "HZ", "HZ", "\tau"]
+        self.highlight_equation(title, formula, highlights, highlight_color=RED, wait_time=1.5)
